@@ -93,7 +93,7 @@ const EventDetail = () => {
                                 </div>
                                 <div>
                                     <p className="text-sm font-semibold text-gray-400 uppercase">Ticket Price</p>
-                                    <p className="font-bold text-gray-800 text-lg">{event.ticketPrice === 0 ? <span className="text-green-500">Free</span> : `₹${event.ticketPrice}`}</p>
+                                    <p className="font-bold text-gray-800 text-lg">{event.price === 0 ? <span className="text-green-500">Free</span> : `₹${event.price}`}</p>
                                 </div>
                             </div>
 

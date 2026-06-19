@@ -33,9 +33,9 @@ export const getEventById = async (req,res) => {
 
 export const createEvent = async (req,res)=>{
     try{
-        const {name,description,date,location,category,totalSeats,availableSeats,price,imageUrl} = req.body;
+        const {title,description,date,location,category,totalSeats,availableSeats,price,imageUrl} = req.body;
         const event = new eventModel({
-            name,
+            title,
             description,
             date,
             location,
@@ -56,9 +56,9 @@ export const createEvent = async (req,res)=>{
 
 export const updateEvent = async (req,res) => {
     try{
-        const {name,description,date,location,category,totalSeats,availableSeats,price,imageUrl} = req.body;
+        const {title,description,date,location,category,totalSeats,availableSeats,price,imageUrl} = req.body;
         const event = await eventModel.findByIdAndUpdate(req.params.id,
-            name,
+            title,
             description,
             date,
             location,

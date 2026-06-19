@@ -13,6 +13,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+
 export const sendBookingEmail = async (userEmail, userName, eventTitle) => {
     try {
         const mailOptions = {
@@ -33,6 +34,8 @@ export const sendBookingEmail = async (userEmail, userName, eventTitle) => {
 };
 export const sendOTPEmail = async (userEmail, otp, type) => {
     try {
+        console.log("sendOTPEmail called with:", { userEmail, otp, type }); // 👈 add this
+
         const title = type === 'account_verification' ? 'Verify your Eventora Account' : 'Eventora Booking Verification';
         const msg = type === 'account_verification'
             ? 'Please use the following OTP to verify your new Eventora account.'

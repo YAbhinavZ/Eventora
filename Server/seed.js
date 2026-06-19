@@ -132,10 +132,10 @@ const seedDatabase = async () => {
                 const status = statuses[Math.floor(Math.random() * statuses.length)];
 
                 let paymentStatus = 'unpaid';
-                if (status === 'confirmed' && event.ticketPrice > 0) {
+                if (status === 'confirmed' && event.price > 0) {
                     // Usually confirmed tickets are marked paid (90% of the time)
                     paymentStatus = Math.random() > 0.1 ? 'paid' : 'unpaid';
-                } else if (event.ticketPrice === 0) {
+                } else if (event.price === 0) {
                     paymentStatus = 'paid';
                 }
 

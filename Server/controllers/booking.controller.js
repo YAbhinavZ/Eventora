@@ -13,11 +13,28 @@ export const sendBookingOTP = async (req, res) => {
     const otp = generateOTP();
     await otpModel.findOneAndDelete({
       userId: req.user._id,
-      action: "event_verification", 
+      action: "event_booking",
     });
-    await otpModel.create({ userId: req.user._id, otp, action: "event_verification" });
-    await sendOTPEmail(req.user.email, otp);
+    await otpModel.create({
+      userId: req.user._id,
+      otp,
+      email: req.user.email,
+      action: "event_booking",
+    });
+    await sendOTPEmail(req.user.email, otp, "event_booking");
     res.json({ message: "OTP sent to email" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export const getAllBookings = async (req, res) => {
+  try {
+    const bookings = await bookingModel
+      .find()
+      .populate("userId", "name email")
+      .populate("eventId", "title availableSeats totalSeats");
+    res.json(bookings);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -25,41 +42,58 @@ export const sendBookingOTP = async (req, res) => {
 };
 
 export const bookEvent = async (req, res) => {
+  console.log("bookEvent hit"); // 👈 add this
+  console.log("params:", req.params); // 👈 add this
+  console.log("body:", req.body); // 👈 add this
   try {
-    const { eventId, otp } = req.body;
+    const { otp } = req.body;
+    const { eventId } = req.params;
 
     const otpRecord = await otpModel.findOne({
       userId: req.user._id,
       otp,
-      action: "event_verification",
+      action: "event_booking",
     });
-    if (!otpRecord)
-      return res.status(400).json({ message: "Invalid OTP" });
+    console.log("OTP record:", otpRecord); // 👈 add this
+    console.log("Looking for:", {
+      userId: req.user._id,
+      otp,
+      action: "event_booking",
+    }); // 👈 add this
+
+    if (!otpRecord) return res.status(400).json({ message: "Invalid OTP" });
 
     const event = await eventModel.findById(eventId);
-    if (!event)
-      return res.status(404).json({ message: "Event not found" });
+    if (!event) return res.status(404).json({ message: "Event not found" });
 
     if (event.availableSeats <= 0)
       return res.status(400).json({ message: "No seats available" });
 
     const existingBooking = await bookingModel.findOne({
-      userId: req.user._id, 
-      eventId,              
+      userId: req.user._id,
+      eventId,
     });
     if (existingBooking)
-      return res.status(400).json({ message: "You have already booked this event" });
+      return res
+        .status(400)
+        .json({ message: "You have already booked this event" });
 
     const booking = await new bookingModel({
-      userId: req.user._id, 
+      userId: req.user._id,
       eventId,
       status: "pending",
       paymentStatus: "unpaid",
       amount: event.price,
     }).save();
 
-    await otpModel.deleteMany({ userId: req.user._id, action: "event_verification" });
-    res.status(201).json({ message: "Booking created, please proceed to payment", bookingId: booking._id });
+    await otpModel.deleteMany({
+      userId: req.user._id,
+      action: "event_booking",
+    });
+    res.status(201).json({
+      message: "Booking created, please proceed to payment",
+      bookingId: booking._id,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -68,18 +102,17 @@ export const bookEvent = async (req, res) => {
 
 export const confirmBooking = async (req, res) => {
   try {
-    const { paymentStatus } = req.body; 
+    const { paymentStatus } = req.body;
 
     if (paymentStatus !== "paid" && paymentStatus !== "unpaid")
       return res.status(400).json({ message: "Invalid payment status" });
 
     const booking = await bookingModel
       .findById(req.params.bookingId)
-      .populate("userId")  
-      .populate("eventId"); 
+      .populate("userId")
+      .populate("eventId");
 
-    if (!booking)
-      return res.status(404).json({ message: "Booking not found" });
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
 
     if (booking.status === "confirmed")
       return res.status(400).json({ message: "Booking already confirmed" });
@@ -89,13 +122,13 @@ export const confirmBooking = async (req, res) => {
       return res.status(400).json({ message: "No seats available" });
 
     booking.status = "confirmed";
-    booking.paymentStatus = paymentStatus; 
+    booking.paymentStatus = paymentStatus;
     event.availableSeats -= 1;
 
     await event.save();
     await booking.save();
     await sendBookingEmail(
-      booking.userId.email,   
+      booking.userId.email,
       booking.userId.name,
       booking.eventId.title
     );
@@ -110,8 +143,8 @@ export const confirmBooking = async (req, res) => {
 export const getMyBookings = async (req, res) => {
   try {
     const bookings = await bookingModel
-      .find({ userId: req.user._id }) 
-      .populate("eventId");           
+      .find({ userId: req.user._id })
+      .populate("eventId");
     res.json(bookings);
   } catch (err) {
     console.error(err);
@@ -122,11 +155,12 @@ export const getMyBookings = async (req, res) => {
 export const cancelBooking = async (req, res) => {
   try {
     const booking = await bookingModel.findById(req.params.bookingId);
-    if (!booking)
-      return res.status(404).json({ message: "Booking not found" });
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
 
     if (booking.userId.toString() !== req.user._id.toString())
-      return res.status(403).json({ message: "Not authorized to cancel this booking" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to cancel this booking" });
 
     if (booking.status === "cancelled")
       return res.status(400).json({ message: "Booking already cancelled" });
@@ -138,7 +172,7 @@ export const cancelBooking = async (req, res) => {
     }
 
     booking.status = "cancelled";
-    await booking.deleteOne(); 
+    await booking.deleteOne();
     res.json({ message: "Booking cancelled" });
   } catch (err) {
     console.error(err);

@@ -1,9 +1,14 @@
 import mongoose from "mongoose";
 const otpSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,  
+    },
     email:{
         type:String,
         required:true,
-        unique:true
+
     },
     otp:{
         type:String,
@@ -11,7 +16,7 @@ const otpSchema = new mongoose.Schema({
     },
     action:{
         type:String,
-        enum : ["account_verification","event-booking"],
+        enum : ["account_verification","event_booking"],
         required:true
     },
     createdAt:{

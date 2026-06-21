@@ -101,6 +101,8 @@ export const bookEvent = async (req, res) => {
 };
 
 export const confirmBooking = async (req, res) => {
+  console.log("Booking ID received:", req.params.id);
+
   try {
     const { paymentStatus } = req.body;
 
@@ -108,7 +110,7 @@ export const confirmBooking = async (req, res) => {
       return res.status(400).json({ message: "Invalid payment status" });
 
     const booking = await bookingModel
-      .findById(req.params.bookingId)
+      .findById(req.params.id)
       .populate("userId")
       .populate("eventId");
 
@@ -154,13 +156,10 @@ export const getMyBookings = async (req, res) => {
 
 export const cancelBooking = async (req, res) => {
   try {
-    const booking = await bookingModel.findById(req.params.bookingId);
+    const booking = await bookingModel.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    if (booking.userId.toString() !== req.user._id.toString())
-      return res
-        .status(403)
-        .json({ message: "Not authorized to cancel this booking" });
+   
 
     if (booking.status === "cancelled")
       return res.status(400).json({ message: "Booking already cancelled" });

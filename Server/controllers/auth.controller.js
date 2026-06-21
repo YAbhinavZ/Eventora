@@ -26,7 +26,12 @@ export const register = async (req, res) => {
     });
     await newUser.save();
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    await otpModel.create({ email, otp: otp, action: "account_verification" });
+    await otpModel.create({
+      userid: newUser._id,
+      email,
+      otp,
+      action: "account_verification",
+    });
     await sendOTPEmail(email, otp, "account_verification");
 
     res.status(201).json({ message: "User registered successfully" });

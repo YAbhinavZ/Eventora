@@ -24,5 +24,7 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+},{
+  timestamps: true,
 });
 export const bookingModel = mongoose.model("Booking", bookingSchema);

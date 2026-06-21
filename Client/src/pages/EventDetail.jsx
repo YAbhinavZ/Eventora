@@ -63,9 +63,7 @@ const EventDetail = () => {
         );
       } else {
         await api.post(`/bookings/book/${event._id}`, { otp });
-        setSuccessMsg(
-          "OTP verified! Your booking is pending admin approval. You will receive a confirmation email once approved."
-        );
+       
         setShowOTP(false);
         setAlreadyBooked(true);
         setBookingStatus("pending");

@@ -11,7 +11,6 @@ import PaymentSuccess from './pages/PaymentSuccess.jsx';
 import PaymentFailed from './pages/PaymentFailed.jsx';
 
 function App() {
- 
 
   return (
     <Router>

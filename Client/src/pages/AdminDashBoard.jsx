@@ -9,7 +9,7 @@ const AdminDashBoard = () => {
   const [events, setEvents] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [editingEventId, setEditingEventId] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -18,8 +18,8 @@ const AdminDashBoard = () => {
     location: "",
     category: "",
     totalSeats: "",
-    ticketPrice: "",
-    image: "",
+    price: "",
+    imageUrl: "",
   });
 
   useEffect(() => {
@@ -34,7 +34,7 @@ const AdminDashBoard = () => {
     try {
       const [eventsRes, bookingsRes] = await Promise.all([
         api.get("/events"),
-        api.get("/bookings/all"), // ✅ admin gets all bookings
+        api.get("/bookings/all"),
       ]);
       setEvents(eventsRes.data);
       setBookings(bookingsRes.data);
@@ -47,9 +47,16 @@ const AdminDashBoard = () => {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
+
     try {
-      await api.post("/events", formData);
-      setShowEventForm(false);
+      if (editingEventId) {
+        await api.put(`/events/${editingEventId}`, formData);
+        alert("Event updated successfully");
+      } else {
+        await api.post("/events", formData);
+        alert("Event created successfully");
+      }
+
       setFormData({
         title: "",
         description: "",
@@ -57,12 +64,18 @@ const AdminDashBoard = () => {
         location: "",
         category: "",
         totalSeats: "",
-        ticketPrice: "",
-        image: "",
+        availableSeats: "",
+        price: "",
+        imageUrl: "",
       });
-      fetchData();
+
+      setEditingEventId(null);
+      setShowEventForm(false);
+
+      await fetchData();
     } catch (error) {
-      alert(error.response?.data?.message || "Error creating event");
+      console.error(error);
+      alert(error.response?.data?.message || "Error saving event");
     }
   };
 
@@ -78,6 +91,7 @@ const AdminDashBoard = () => {
   };
 
   const handleConfirmBooking = async (id, paymentStatus) => {
+    console.log("handleConfirmBooking called", id);
     try {
       await api.put(`/bookings/${id}/confirm`, { paymentStatus });
       fetchData();
@@ -87,6 +101,7 @@ const AdminDashBoard = () => {
   };
 
   const handleCancelBooking = async (id) => {
+    console.log("handleCancelBooking called", id);
     if (window.confirm("Cancel this user's booking request?")) {
       try {
         await api.delete(`/bookings/${id}`);
@@ -95,6 +110,22 @@ const AdminDashBoard = () => {
         alert(error.response?.data?.message || "Error cancelling booking");
       }
     }
+  };
+  const handleEditEvent = (event) => {
+    setFormData({
+      title: event.title,
+      description: event.description,
+      date: event.date?.split("T")[0],
+      location: event.location,
+      category: event.category,
+      totalSeats: event.totalSeats,
+      availableSeats: event.availableSeats,
+      price: event.price,
+      imageUrl: event.imageUrl,
+    });
+
+    setEditingEventId(event._id);
+    setShowEventForm(true);
   };
 
   if (loading)
@@ -185,7 +216,7 @@ const AdminDashBoard = () => {
       {showEventForm && (
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8 animation-slideDown">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">
-            Create New Event
+            {editingEventId ? "Update Event" : "Create New Event"}
           </h2>
           <form
             onSubmit={handleCreateEvent}
@@ -243,25 +274,33 @@ const AdminDashBoard = () => {
             <input
               required
               type="number"
+              placeholder="Available Seats"
+              className="border px-4 py-3 rounded-lg focus:ring-2 focus:ring-gray-700 outline-none transition"
+              value={formData.availableSeats}
+              onChange={(e) =>
+                setFormData({ ...formData, availableSeats: e.target.value })
+              }
+            />
+            <input
+              required
+              type="number"
               placeholder="Ticket Price (0 for free)"
               className="border px-4 py-3 rounded-lg focus:ring-2 focus:ring-gray-700 outline-none transition"
-              value={formData.ticketPrice}
+              value={formData.price}
               onChange={(e) =>
-                setFormData({ ...formData, ticketPrice: e.target.value })
+                setFormData({ ...formData, price: e.target.value })
               }
             />
 
-            <div className="md:col-span-2">
-              <input
-                type="text"
-                placeholder="Image URL (Provide any direct link to an image)"
-                className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-gray-700 outline-none transition"
-                value={formData.image}
-                onChange={(e) =>
-                  setFormData({ ...formData, image: e.target.value })
-                }
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="Image URL (Provide any direct link to an image)"
+              className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-gray-700 outline-none transition"
+              value={formData.imageUrl}
+              onChange={(e) =>
+                setFormData({ ...formData, imageUrl: e.target.value })
+              }
+            />
 
             <textarea
               required
@@ -276,7 +315,7 @@ const AdminDashBoard = () => {
               type="submit"
               className="md:col-span-2 bg-gray-900 text-white font-bold py-3 mt-2 rounded-lg hover:bg-black transition shadow-md"
             >
-              Publish Event
+              {editingEventId ? "Update Event" : "Publish Event"}
             </button>
           </form>
         </div>
@@ -324,12 +363,21 @@ const AdminDashBoard = () => {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteEvent(event._id)}
-                      className="w-full sm:w-auto text-red-500 hover:text-white hover:bg-red-500 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm shrink-0"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => handleEditEvent(event)}
+                        className="flex-1 sm:flex-none text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm"
+                      >
+                        Update
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteEvent(event._id)}
+                        className="flex-1 sm:flex-none text-red-500 hover:text-white hover:bg-red-500 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </li>
                 ))
               )}
@@ -421,7 +469,7 @@ const AdminDashBoard = () => {
                           Date:
                         </span>
                         <span>
-                          {new Date(booking.bookedAt).toLocaleString()}
+                          {new Date(booking.createdAt).toLocaleString()}
                         </span>
                       </p>
                       {booking.eventId && (

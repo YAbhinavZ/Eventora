@@ -1,14 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import EventDetail from './pages/EventDetail';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import UserDashboard from './pages/UserDashBoard';
-import AdminDashboard from './pages/AdminDashboard';
-import PaymentSuccess from './pages/PaymentSuccess';
-import PaymentFailed from './pages/PaymentFailed';
+import Navbar from './components/Navbar.jsx';
+import Home from './pages/Home.jsx';
+import EventDetail from './pages/EventDetail.jsx';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import UserDashboard from './pages/UserDashBoard.jsx';
+import AdminDashboard from './pages/AdminDashBoard.jsx';
+import PaymentSuccess from './pages/PaymentSuccess.jsx';
+import PaymentFailed from './pages/PaymentFailed.jsx';
 
 function App() {
  
